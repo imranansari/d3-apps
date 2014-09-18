@@ -8,7 +8,7 @@
 
         this.structure = [];
         this.content = content;
-        this.content.sort(function(a,b) {
+        this.content.sort(function (a, b) {
             if (a.relations == null) {
                 return -1;
             } else if (b.relations == null) {
@@ -27,20 +27,20 @@
                     v2 = v2[0];
                 }
 
-                if(v1 == v2) {
+                if (v1 == v2) {
                     return a.id - b.id;
                 } else {
                     return v1 - v2;
                 }
             }
-	    });
+        });
 
-	    for(var index in this.content) {
-	    	 var elem = this.content[index];
+        for (var index in this.content) {
+            var elem = this.content[index];
             elem.position = {};
-	    	 var layer = this.getLayer(elem);
-	    	 layer.data.push(elem);
-	    }
+            var layer = this.getLayer(elem);
+            layer.data.push(elem);
+        }
 
     }
 
@@ -65,16 +65,16 @@
         if (!(typeof id == 'number')) {
             throw 'Tree.find() ID should be a number';
         } else {
-        	for(var lev_index= 0, lev_last= this.structure.length; lev_index < lev_last; lev_index++) {
+            for (var lev_index = 0, lev_last = this.structure.length; lev_index < lev_last; lev_index++) {
                 var level = this.structure[lev_index];
-        		for(var elem_index= 0, elem_last= level.data.length; elem_index < elem_last; elem_index++) {
+                for (var elem_index = 0, elem_last = level.data.length; elem_index < elem_last; elem_index++) {
                     var element = level.data[elem_index];
-        			if(element.id == id) {
-        				return element;
-        			}
-        		}
-        	}
-        	return null;
+                    if (element.id == id) {
+                        return element;
+                    }
+                }
+            }
+            return null;
         }
     };
 
@@ -83,7 +83,7 @@
      * @param selector
      * @returns {Tree}
      */
-    Tree.prototype.draw = function(selector) {
+    Tree.prototype.draw = function (selector) {
 
         // Used to fill circles
         var colors = [
@@ -91,6 +91,49 @@
             '#01A976',
             '#FF0181'
         ];
+
+        // Event handler for click.
+        var selectNode = (function(tree) {
+            var selected = false;
+
+            function getConnectedElements(element) {
+                var children = tree.getChildren(element),
+                    connectedElements = [];
+
+                if(children.length > 0) {
+                    connectedElements = connectedElements.concat(element);
+                    for(var i= children.length-1; i>=0; i--) {
+                        connectedElements = connectedElements.concat(getConnectedElements(children[i]));
+                    }
+                } else {
+                    return [element];
+                }
+                return connectedElements;
+            }
+
+            return function() {
+                if(!selected) {
+                    var element = d3.select(this).node().__data__,
+                        connectedElements = getConnectedElements(element);
+
+                    screen.nodes.style('opacity', function(o){
+                        for(var i= connectedElements.length-1; i>=0; i--) {
+                            if (connectedElements[i].id == o.id) {
+                                return 1;
+                            }
+                        }
+                        return 0.1;
+                    });
+
+
+                    selected = tree.structure[0].data[0].id != element.id;
+                } else {
+                    screen.nodes.style('opacity', 1);
+                    screen.links.style('opacity', 1);
+                    selected = false;
+                }
+            }
+        })(this);
 
         var container = d3.select(selector),
             width = parseInt(container.style('width')),
@@ -102,44 +145,46 @@
 
         this._calculatePositions(container);
 
-        var links = this.getLinks();
+        var links = this.getLinks(),
+            screen = {};
 
-        svg.selectAll('line')
+        screen.links = svg.selectAll('line')
             .data(links)
             .enter()
             .append('line')
-            .attr('x1', function(d) {
+            .attr('x1', function (d) {
                 return d.from.x;
             })
-            .attr('y1', function(d) {
+            .attr('y1', function (d) {
                 return d.from.y;
             })
-            .attr('x2', function(d) {
+            .attr('x2', function (d) {
                 return d.to.x;
             })
-            .attr('y2', function(d) {
+            .attr('y2', function (d) {
                 return d.to.y;
             })
-            .attr('stroke','#0106FF')
+            .attr('stroke', '#0106FF')
             .attr('stroke-width', 2);
 
-        svg.selectAll('circle')
+        screen.nodes = svg.selectAll('circle')
             .data(this.content)
             .enter()
             .append('circle')
-            .attr('cx', function(d) {
+            .attr('cx', function (d) {
                 return d.position.x;
             })
-            .attr('cy', function(d) {
+            .attr('cy', function (d) {
                 return d.position.y;
             })
             .attr('r', 15)
-            .attr('id', function(d) {
+            .attr('id', function (d) {
                 return d.id
             })
-            .attr('fill', function(d) {
+            .attr('fill', function (d) {
                 return colors[d.group];
-            });
+            })
+            .on('click', selectNode);
 
         return this;
     };
@@ -148,26 +193,28 @@
      * Method to create links
      * @returns {Array}
      */
-    Tree.prototype.getLinks = function() {
+    Tree.prototype.getLinks = function () {
 
         var links = [], target;
 
-        for(var element_index= 0, last_index= this.content.length; element_index < last_index; element_index++) {
+        for (var element_index = 0, last_index = this.content.length; element_index < last_index; element_index++) {
             var element = this.content[element_index];
-            for(var key in element.relations) {
+            for (var key in element.relations) {
                 var relation = element.relations[key];
-                if(!(relation instanceof Array)) {
+                if (!(relation instanceof Array)) {
                     relation = [relation];
                 }
-                for(var rel_index= 0, last_rel= relation.length; rel_index < last_rel; rel_index++) {
+                for (var rel_index = 0, last_rel = relation.length; rel_index < last_rel; rel_index++) {
                     target = this.find(relation[rel_index]);
 
                     links.push({
                         from: {
+                            obj: element,
                             x: element.position.x,
                             y: element.position.y
                         },
                         to: {
+                            obj: target,
                             x: target.position.x,
                             y: target.position.y
                         }
@@ -185,20 +232,20 @@
      * @returns {Tree}
      * @private
      */
-    Tree.prototype._calculatePositions = function(container) {
+    Tree.prototype._calculatePositions = function (container) {
 
         var width = parseInt(container.style('width')),
             height = parseInt(container.style('height'));
 
         function getPosition(data, elem) {
-            for(var i= 0, j= data.length; i<j; i++) {
-                if(data[i].id == elem.id) {
+            for (var i = 0, j = data.length; i < j; i++) {
+                if (data[i].id == elem.id) {
                     return i;
                 }
             }
         }
 
-        for(var elem_index= 0, last_elem= this.content.length; elem_index<last_elem; elem_index++) {
+        for (var elem_index = 0, last_elem = this.content.length; elem_index < last_elem; elem_index++) {
 
             var d = this.content[elem_index];
 
@@ -206,20 +253,20 @@
                 position = getPosition(layer.data, d) + 1,
                 step = width / (1 + layer.data.length);
 
-            if(d.relations != null) {
+            if (d.relations != null) {
 
                 var parent = this.find(d.relations.parent),
                     neighbors = this.getChildren(parent),
                     neighborsLength = neighbors.length;
-                
-                var offset = ((parent.position.toNextElement && neighborsLength > 1) ? parent.position.toNextElement/2 : 75 * (neighborsLength - 1));
+
+                var offset = ((parent.position.toNextElement && neighborsLength > 1) ? parent.position.toNextElement / 2 : 75 * (neighborsLength - 1));
 
                 position = getPosition(neighbors, d);
 
                 var x1 = parent.position.x - offset,
                     x2 = parent.position.x + offset,
                     d1 = x2 - x1,
-                    off = Math.round(d1/((neighborsLength-1 > 1) ? neighborsLength-1 : 1));
+                    off = Math.round(d1 / ((neighborsLength - 1 > 1) ? neighborsLength - 1 : 1));
 
                 d.position.toNextElement = off;
                 d.position.x = parent.position.x - offset + off * position;
@@ -237,37 +284,37 @@
     /**
      *  Method to get layer for chosen element
      */
-    Tree.prototype.getLayer = function(element) {
+    Tree.prototype.getLayer = function (element) {
 
         var layer,
             layerIndex = 0;
 
-        if(element.relations == null) {
-        	layer = this.structure[0];
-        	if(layer) {
-        		return layer;      	
-        	} else {
-        		layer = {
+        if (element.relations == null) {
+            layer = this.structure[0];
+            if (layer) {
+                return layer;
+            } else {
+                layer = {
                     level: layerIndex,
                     data: []
                 };
-        		this.structure.push(layer);
-        		return layer;
-        	}
-            
+                this.structure.push(layer);
+                return layer;
+            }
+
         }
 
         var thisLayer = false;
 
-    	for(var index= 0, lastElem= this.structure.length; index < lastElem; index++) {
-    		layer = this.structure[index];
+        for (var index = 0, lastElem = this.structure.length; index < lastElem; index++) {
+            layer = this.structure[index];
 
-    		if (thisLayer) {
+            if (thisLayer) {
                 return layer;
             }
 
-            for (var _element_index= 0, last_element= layer.data.length; _element_index < last_element; _element_index++) {
-            	var _element = layer.data[_element_index];
+            for (var _element_index = 0, last_element = layer.data.length; _element_index < last_element; _element_index++) {
+                var _element = layer.data[_element_index];
                 if (_element.id == element.relations.parent) {
                     thisLayer = true;
                 }
@@ -292,25 +339,27 @@
      * @param element
      * @returns {Array}
      */
-    Tree.prototype.getChildren = function(element) {
+    Tree.prototype.getChildren = function (element) {
 
         var layer = this.structure[this.structure.indexOf(this.getLayer(element)) + 1],
             children = [];
 
-        for(var i= 0, j= layer.data.length; i<j; i++) {
-            if(layer.data[i].relations.parent == element.id) {
-                children.push(layer.data[i]);
+        if(layer) {
+            for (var i = 0, j = layer.data.length; i < j; i++) {
+                if (layer.data[i].relations.parent == element.id) {
+                    children.push(layer.data[i]);
+                }
             }
         }
         return children;
     };
 
-    if(!g){
-    	throw 'Tree api. Global object is not defined!';
+    if (!g) {
+        throw 'Tree api. Global object is not defined!';
     }
 
-    if(!g.ics) {
-    	g.ics = {}
+    if (!g.ics) {
+        g.ics = {}
     }
 
     g.ics.Tree = Tree;
