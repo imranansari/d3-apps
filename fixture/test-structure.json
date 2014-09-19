@@ -1,97 +1,32 @@
 [
     {
         "id": 0,
-        "name": "base-level",
-        "relations": null,
-        "group": 0
+        "group": 0,
+        "dependencies": [1,2,3]
     },
     {
         "id": 1,
-        "name": "first-level-1",
-        "relations": {
-            "parent": 0
-        },
-        "group": 1
+        "group": 1,
+        "dependencies": [3]
     },
     {
         "id": 2,
-        "name": "first-level-2",
-        "relations": {
-            "parent": 0,
-            "neighbors": 1
-        },
-        "group": 1
+        "group": 1,
+        "dependencies": [4,5]
     },
     {
         "id": 3,
-        "name": "second-level-1",
-        "relations": {
-            "parent": 0
-        },
-        "group": 1
+        "group": 1,
+        "dependencies": [1]
     },
     {
         "id": 4,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 0
-        },
-        "group": 1
+        "group": 1,
+        "dependencies": []
     },
     {
         "id": 5,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 0
-        },
-        "group": 1
-    },
-    {
-        "id": 6,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 2
-        },
-        "group": 1
-    },
-    {
-        "id": 7,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 2
-        },
-        "group": 2
-    },
-    {
-        "id": 8,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 2
-        },
-        "group": 2
-    },
-    {
-        "id": 9,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 2
-        },
-        "group": 2
-    },
-    {
-        "id": 10,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 6
-        },
-        "group": 2
-    },
-    {
-        "id": 11,
-        "name": "first-level-3",
-        "relations": {
-            "parent": 9
-        },
-        "group": 2
+        "group": 1,
+        "dependencies": []
     }
 ]
